@@ -1,3 +1,72 @@
+# State Farm's copy of CLA Assistant Lite
+
+> [!NOTE]
+> **State Farm added this section.** Everything below the line is the original project's README, unchanged.
+
+The [StateFarmIns](https://github.com/StateFarmIns) open source projects use this copy of [contributor-assistant/github-action](https://github.com/contributor-assistant/github-action), which its author has archived. We use version 2.3.0, pinned to commit `5bfe123a0731f017d9c29550976bf724fe0870f5`. Keep that exact commit, because later versions behave differently and haven't been tested with this setup. The original README describes the latest version, so some of its options, such as `suggest-recheck`, don't exist in 2.3.0.
+
+## Add the CLA check to a StateFarmIns repository
+
+You need write access to the repository. Start from a clone with no uncommitted changes, and replace `DEFAULT` in the commands with the default branch, such as `main`.
+
+1. **Create the `cla-signatures` branch.** The bot saves signatures to `signatures/version1/cla.json` on this branch, so it can save them even if the default branch requires pull requests.
+
+   ```sh
+   git switch --orphan cla-signatures
+   mkdir -p signatures/version1
+   printf '{\n  "signedContributors": []\n}\n' > signatures/version1/cla.json
+   git add signatures/version1/cla.json
+   git commit -m "chore: seed CLA signatures file"
+   git push origin cla-signatures
+   git switch DEFAULT
+   ```
+
+   `--orphan` starts the branch without the project's files. They come back when you switch back.
+
+   If the default branch already has signers in `signatures/version1/cla.json`, replace the `printf` line with the following, so nobody has to sign again:
+
+   ```sh
+   git show origin/DEFAULT:signatures/version1/cla.json > signatures/version1/cla.json
+   ```
+
+2. **Add the workflow.** Copy the [org's CLA workflow](https://github.com/StateFarmIns/.github/blob/master/.github/workflows/cla.yml) into the repository:
+
+   ```sh
+   mkdir -p .github/workflows
+   curl -fsSL https://raw.githubusercontent.com/StateFarmIns/.github/master/.github/workflows/cla.yml -o .github/workflows/cla.yml
+   ```
+
+3. **Set the allowlist.** In `.github/workflows/cla.yml`, change only the `allowlist` line, keeping its indentation and quotes. List the GitHub usernames of the people who maintain the repository, separated by commas, and end with `*[bot]` so bots such as Dependabot don't have to sign:
+
+   ```yaml
+             allowlist: 'username1,username2,*[bot]'
+   ```
+
+   Usernames must match GitHub's capitalization exactly. In an entry, `*` matches anything, so keep `*[bot]` as written. A broader pattern such as `bot*` would let any username containing "bot" skip signing.
+
+4. **Commit and push to the default branch.** The workflow only runs from there. If you copied existing signers in step 1, run `git rm -r signatures` first. If pushes to the default branch publish a package or cut a release, start the message with `chore:` and include `[skip ci]`, as shown:
+
+   ```sh
+   git add .github/workflows/cla.yml
+   git commit -m "chore: add CLA check [skip ci]"
+   git push origin DEFAULT
+   ```
+
+   Pushing a workflow file needs a token with the `workflow` scope. If GitHub rejects the push, run `gh auth refresh -s workflow` and push again. If the default branch requires pull requests, merge the change through one instead.
+
+5. **Check it.** The Actions tab lists **CLA Assistant**, and the next pull request from a maintainer gets a passing **CLAAssistant** check.
+
+## How signing works
+
+- When someone who isn't on the allowlist opens a pull request, the bot comments with a link to the CLA, and the **CLAAssistant** check fails.
+- They sign by commenting exactly `I have read the CLA Document and I hereby sign the CLA`.
+- The bot saves the signature to the `cla-signatures` branch, re-runs the check so it passes, and updates its comment.
+- Comment `recheck` to run the bot again, for example on a pull request opened before the CLA check was added. Those pull requests don't show a **CLAAssistant** check, so use the bot's comment as their status.
+- When a pull request is closed or merged, the bot locks its conversation. Don't close a pull request that's waiting for a signature, because the contributor couldn't comment to sign, even if it's reopened.
+- Don't protect, delete, or merge the `cla-signatures` branch. Branch protection and rulesets should cover only the default branch.
+
+---
+
 ![build](https://github.com/cla-assistant/github-action/workflows/build/badge.svg)
 
 
