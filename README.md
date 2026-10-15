@@ -63,7 +63,7 @@ You need write access to the repository. Start from a clone with no uncommitted 
 - The bot saves the signature to the `cla-signatures` branch, re-runs the check so it passes, and updates its comment.
 - Comment `recheck` to run the bot again, for example on a pull request opened before the CLA check was added. Those pull requests don't show a **CLAAssistant** check, so use the bot's comment as their status.
 - When a pull request is closed or merged, the bot locks its conversation. Don't close a pull request that's waiting for a signature, because the contributor couldn't comment to sign, even if it's reopened.
-- Don't protect, delete, or merge the `cla-signatures` branch. Branch protection and rulesets should cover only the default branch.
+- Don't delete or merge the `cla-signatures` branch, and don't add rules that block pushes to it, such as requiring a pull request. Blocking deletion and force pushes is fine; in StateFarmIns, an org ruleset already does that.
 
 ---
 
